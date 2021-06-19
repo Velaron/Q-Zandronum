@@ -533,7 +533,7 @@ public:
 	DWORD		original_oldbuttons;
 
 	// [geNia] Used to spawn actors on client side and then replace them with server spawned
-	// This is needed for unlagged projectiles when compat_predictclientsidefunctions is true
+	// This is needed for unlagged projectiles when compat_allowmoreclientsidefunctions is true
 	ULONG		firstFreeNetId;
 
 	userinfo_t	userinfo;				// [RH] who is this?
