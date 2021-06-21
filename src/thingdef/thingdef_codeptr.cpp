@@ -86,7 +86,6 @@ static FRandom pr_camelee ("CustomMelee");
 static FRandom pr_cabullet ("CustomBullet");
 static FRandom pr_cajump ("CustomJump");
 static FRandom pr_cwbullet ("CustomWpBullet");
-static FRandom pr_cwjump ("CustomWpJump");
 static FRandom pr_cwpunch ("CustomWpPunch");
 static FRandom pr_grenade ("ThrowGrenade");
 static FRandom pr_spawndebris ("SpawnDebris");
@@ -2651,10 +2650,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ThrowGrenade)
 	}
 
 	// [BC] Weapons are handled by the server.
-	if ( NETWORK_InClientMode() )
+	// [geNia] Unless clientside functions are allowed
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( self ) )
 	{
-		if (( self->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false )
-			return;
+		return;
 	}
 
 	AActor * bo;
@@ -2667,7 +2666,7 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_ThrowGrenade)
 		P_PlaySpawnSound(bo, self);
 		if (xyvel != 0)
 			bo->Speed = xyvel;
-		bo->angle = self->angle + (((pr_grenade()&7) - 4) << 24);
+		bo->angle = self->angle + (((self->actorRandom()&7) - 4) << 24);
 
 		angle_t pitch = angle_t(-self->pitch) >> ANGLETOFINESHIFT;
 		angle_t angle = bo->angle >> ANGLETOFINESHIFT;
