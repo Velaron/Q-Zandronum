@@ -84,7 +84,6 @@
 static FRandom pr_camissile ("CustomActorfire");
 static FRandom pr_camelee ("CustomMelee");
 static FRandom pr_cabullet ("CustomBullet");
-static FRandom pr_cajump ("CustomJump");
 static FRandom pr_cwbullet ("CustomWpBullet");
 static FRandom pr_cwpunch ("CustomWpPunch");
 static FRandom pr_grenade ("ThrowGrenade");
@@ -634,7 +633,7 @@ static void DoJump(AActor * self, FState * CallingState, FState *jumpto, StateCa
 		if (( clientUpdateFlags & CLIENTUPDATE_FRAME ) &&
 			( NETWORK_GetState( ) == NETSTATE_SERVER ))
 		{
-			SERVER_HandleWeaponStateJump ( static_cast<ULONG>( self->player - players ), jumpto, ps_weapon );
+			SERVER_HandleWeaponStateJump ( static_cast<ULONG>( self->player - players ), jumpto, ps_weapon, !!(clientUpdateFlags & CLIENTUPDATE_SKIPPLAYER) );
 		}
 
 		P_SetPsprite(self->player, ps_weapon, jumpto);
@@ -645,7 +644,7 @@ static void DoJump(AActor * self, FState * CallingState, FState *jumpto, StateCa
 		if (( clientUpdateFlags & CLIENTUPDATE_FRAME ) &&
 			( NETWORK_GetState( ) == NETSTATE_SERVER ))
 		{
-			SERVER_HandleWeaponStateJump ( static_cast<ULONG>( self->player - players ), jumpto, ps_flash );
+			SERVER_HandleWeaponStateJump ( static_cast<ULONG>( self->player - players ), jumpto, ps_flash, !!(clientUpdateFlags & CLIENTUPDATE_SKIPPLAYER) );
 		}
 
 		P_SetPsprite(self->player, ps_flash, jumpto);
@@ -654,7 +653,8 @@ static void DoJump(AActor * self, FState * CallingState, FState *jumpto, StateCa
 	{
 		// [BC] If we're the server, tell clients to change the thing's state.
 		if (( clientUpdateFlags & CLIENTUPDATE_FRAME ) &&
-			( NETWORK_GetState( ) == NETSTATE_SERVER ))
+			( NETWORK_GetState( ) == NETSTATE_SERVER )
+			&& !UNLAGGED_IsReconciled( ) )
 		{
 			// [BB] The server calls the state function, so must the client. Otherwise
 			// things like SXF_CLIENTSIDE wouldn't work if the corresponding call is 
@@ -697,17 +697,24 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Jump)
 	ACTION_PARAM_INT(maxchance, 1);
 
 	// [BC] Don't jump here in client mode.
-	if ( NETWORK_InClientMode() )
+	// [geNia] Unless clientside functions are allowed
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( self ) )
 	{
-		if (( self->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false )
-			return;
+		return;
 	}
 
-	if (count >= 2 && (maxchance >= 256 || pr_cajump() < maxchance))
+	if (count >= 2 && (maxchance >= 256 || self->actorRandom() < maxchance))
 	{
-		int jumps = 2 + (count == 2? 0 : (pr_cajump() % (count - 1)));
+		int jumps = 2 + (count == 2? 0 : (self->actorRandom() % (count - 1)));
 		ACTION_PARAM_STATE(jumpto, jumps);
-		ACTION_JUMP(jumpto, CLIENTUPDATE_FRAME ); // [BC] Random state changes shouldn't be client-side.
+
+		ClientJumpUpdateFlags clientUpdateFlags = 0;
+		clientUpdateFlags |= CLIENTUPDATE_FRAME;
+
+		if ( NETWORK_ClientsideFunctionsAllowed( self ) )
+			clientUpdateFlags |= CLIENTUPDATE_SKIPPLAYER;
+
+		ACTION_JUMP(jumpto, clientUpdateFlags); // [BC] Random state changes shouldn't be client-side.
 	}
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 }
@@ -732,13 +739,21 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfHealthLower)
 	}
 
 	// [BC] Don't jump here in client mode.
-	if ( NETWORK_InClientMode() )
+	// [geNia] Unless clientside functions are allowed
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( self ) )
 	{
-		if (( reference->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false )
-			return;
+		return;
 	}
 
-	if (reference->health < health) ACTION_JUMP(jump, CLIENTUPDATE_FRAME);	// [BC] Clients don't know what the actor's health is.
+	if (reference->health < health) {
+		ClientJumpUpdateFlags clientUpdateFlags = 0;
+		clientUpdateFlags |= CLIENTUPDATE_FRAME;
+
+		if ( NETWORK_ClientsideFunctionsAllowed( self ) )
+			clientUpdateFlags |= CLIENTUPDATE_SKIPPLAYER;
+
+		ACTION_JUMP(jump, clientUpdateFlags);
+	}
 
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 }
@@ -805,10 +820,10 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfCloser)
 	AActor *target;
 
 	// [BC] Don't jump here in client mode.
-	if ( NETWORK_InClientMode() )
+	// [geNia] Unless clientside functions are allowed
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( self ) )
 	{
-		if (( self->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false )
-			return;
+		return;
 	}
 
 	if (!self->player)
@@ -846,18 +861,21 @@ void DoJumpIfInventory(AActor * owner, DECLARE_PARAMINFO)
 	ACTION_PARAM_STATE(JumpOffset, 2);
 	ACTION_PARAM_INT(setowner, 3);
 
+	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
+	COPY_AAPTR_NOT_NULL(owner, owner, setowner); //  returns if owner ends up being NULL
+
 	// [BC] Don't jump here in client mode.
 	ClientJumpUpdateFlags clientUpdateFlags = 0;
-	if (( self->player ) &&
-		(( CallingState == self->player->psprites[ps_weapon].state ) || ( CallingState == self->player->psprites[ps_flash].state )))
+	if (( owner->player ) &&
+		(( CallingState == owner->player->psprites[ps_weapon].state ) || ( CallingState == owner->player->psprites[ps_flash].state )))
 	{
 	}
 	else
 	{
 		if ( NETWORK_InClientMode() )
 		{
-			if ((( self->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false ) &&
-				(( self->player == NULL ) || (( self->player - players ) != consoleplayer )))
+			if ((( owner->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false ) &&
+				(( owner->player == NULL ) || (( owner->player - players ) != consoleplayer )))
 			{
 				return;
 			}
@@ -866,16 +884,13 @@ void DoJumpIfInventory(AActor * owner, DECLARE_PARAMINFO)
 		clientUpdateFlags |= CLIENTUPDATE_FRAME;
 
 		// The player should know his own inventory.
-		if ( self->player )
+		if ( owner->player )
 			clientUpdateFlags |= CLIENTUPDATE_SKIPPLAYER;
 		else
 			clientUpdateFlags |= CLIENTUPDATE_POSITION;
 	}
 
-	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
-
 	if (!Type) return;
-	COPY_AAPTR_NOT_NULL(owner, owner, setowner); //  returns if owner ends up being NULL
 
 	AInventory *Item = owner->FindInventory(Type);
 
@@ -3477,14 +3492,20 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIf)
 	ACTION_PARAM_STATE(jump, 1);
 
 	// [BC] Don't jump here in client mode.
-	if ( NETWORK_InClientMode() )
+	// [geNia] Unless clientside functions are allowed
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( self ) )
 	{
-		if (( self->ulNetworkFlags & NETFL_CLIENTSIDEONLY ) == false )
-			return;
+		return;
 	}
+	
+	ClientJumpUpdateFlags clientUpdateFlags = 0;
+	clientUpdateFlags |= CLIENTUPDATE_FRAME;
+
+	if ( NETWORK_ClientsideFunctionsAllowed( self ) )
+		clientUpdateFlags |= CLIENTUPDATE_SKIPPLAYER;
 
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
-	if (expression) ACTION_JUMP(jump, CLIENTUPDATE_FRAME);	// [BC] It's probably not good to do this client-side.
+	if (expression) ACTION_JUMP(jump, clientUpdateFlags);	// [BC] It's probably not good to do this client-side.
 }
 
 //===========================================================================
@@ -4336,8 +4357,11 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetLOS)
 	AActor *target;
 
 	// [BB] This is handled by the server.
-	if ( NETWORK_InClientModeAndActorNotClientHandled( self ) )
+	// [geNia] Unless clientside functions are allowed
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( self ) )
+	{
 		return;
+	}
 
 	ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 
@@ -4396,8 +4420,14 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_JumpIfInTargetLOS)
 
 	if (doCheckSight && !P_CheckSight (target, self, SF_IGNOREVISIBILITY))
 		return;
+	
+	ClientJumpUpdateFlags clientUpdateFlags = 0;
+	clientUpdateFlags |= CLIENTUPDATE_FRAME;
 
-	ACTION_JUMP(jump,CLIENTUPDATE_FRAME);	// [BB] Since monsters don't have targets on the client end, we need to send an update.
+	if ( NETWORK_ClientsideFunctionsAllowed( self ) )
+		clientUpdateFlags |= CLIENTUPDATE_SKIPPLAYER;
+
+	ACTION_JUMP(jump, clientUpdateFlags);	// [BB] Since monsters don't have targets on the client end, we need to send an update.
 }
 
 
@@ -5716,9 +5746,15 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_Warp)
 
 		if (success_state)
 		{
+			ClientJumpUpdateFlags clientUpdateFlags = 0;
+			clientUpdateFlags |= CLIENTUPDATE_FRAME;
+
+			if ( NETWORK_ClientsideFunctionsAllowed( self ) )
+				clientUpdateFlags |= CLIENTUPDATE_SKIPPLAYER;
+
 			ACTION_SET_RESULT(false);	// Jumps should never set the result for inventory state chains!
 			// in this case, you have the statejump to help you handle all the success anyway.
-			ACTION_JUMP(success_state, CLIENTUPDATE_FRAME);	// [BB] Client's don't go in here.
+			ACTION_JUMP(success_state, clientUpdateFlags);	// [BB] Client's don't go in here.
 			return;
 		}
 
