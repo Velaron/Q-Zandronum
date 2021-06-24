@@ -6890,7 +6890,7 @@ bool P_HitWater (AActor * thing, sector_t * sec, fixed_t x, fixed_t y, fixed_t z
 	}
 
 	// [BC] Let the server handle splashes.
-	if ( NETWORK_InClientMode() )
+	if ( !NETWORK_ClientsideFunctionsAllowedOrIsServer( thing ) )
 	{
 		return ( false );
 	}
@@ -6993,7 +6993,20 @@ foundone:
 
 		// [BC/BB] Tell clients to spawn the splash.
 		if ( mo && ( NETWORK_GetState( ) == NETSTATE_SERVER ) )
-			SERVERCOMMANDS_SpawnThing( mo );
+		{
+			if ( zacompatflags & ZACOMPATF_ALLOW_MORE_CLIENTSIDE_FUNCTIONS )
+			{
+				int activatorPlayer = -1;
+				if ( thing->player )
+					activatorPlayer = thing->player - players;
+				else if ( thing->target )
+					activatorPlayer = thing->target->player - players;
+
+				SERVERCOMMANDS_SpawnThing( mo, activatorPlayer, SVCF_SKIPTHISCLIENT );
+			}
+			else
+				SERVERCOMMANDS_SpawnThing( mo );
+		}
 	}
 	else
 	{
@@ -7014,8 +7027,22 @@ foundone:
 			// [BC/BB] Tell clients to spawn the splash.
 			if ( NETWORK_GetState( ) == NETSTATE_SERVER )
 			{
-				SERVERCOMMANDS_SpawnThing( mo );
-				SERVERCOMMANDS_MoveThing( mo, CM_VELX|CM_VELY|CM_VELZ );
+				if ( zacompatflags & ZACOMPATF_ALLOW_MORE_CLIENTSIDE_FUNCTIONS )
+				{
+					int activatorPlayer = -1;
+					if ( thing->player )
+						activatorPlayer = thing->player - players;
+					else if ( thing->target )
+						activatorPlayer = thing->target->player - players;
+
+					SERVERCOMMANDS_SpawnThing( mo, activatorPlayer, SVCF_SKIPTHISCLIENT );
+					SERVERCOMMANDS_MoveThing( mo, CM_VELX|CM_VELY|CM_VELZ, activatorPlayer, SVCF_SKIPTHISCLIENT );
+				}
+				else
+				{
+					SERVERCOMMANDS_SpawnThing( mo );
+					SERVERCOMMANDS_MoveThing( mo, CM_VELX|CM_VELY|CM_VELZ );
+				}
 			}
 		}
 		if (splash->SplashBase)
@@ -7024,7 +7051,20 @@ foundone:
 
 			// [BC/BB] Tell clients to spawn the splash.
 			if ( mo && ( NETWORK_GetState( ) == NETSTATE_SERVER ) )
-				SERVERCOMMANDS_SpawnThing( mo );
+			{
+				if ( zacompatflags & ZACOMPATF_ALLOW_MORE_CLIENTSIDE_FUNCTIONS )
+				{
+					int activatorPlayer = -1;
+					if ( thing->player )
+						activatorPlayer = thing->player - players;
+					else if ( thing->target )
+						activatorPlayer = thing->target->player - players;
+					
+					SERVERCOMMANDS_SpawnThing( mo, activatorPlayer, SVCF_SKIPTHISCLIENT );
+				}
+				else
+					SERVERCOMMANDS_SpawnThing( mo );
+			}
 		}
 		if (thing->player && !splash->NoAlert && alert)
 		{
@@ -7045,7 +7085,20 @@ foundone:
 
 		// [BC] Tell clients to play the sound.
 		if ( NETWORK_GetState( ) == NETSTATE_SERVER )
-			SERVERCOMMANDS_SoundPoint( thing->x, thing->y, thing->z, CHAN_ITEM, smallsplash ? S_GetName( splash->SmallSplashSound ) : S_GetName( splash->NormalSplashSound ), 1, ATTN_IDLE );
+		{
+			if ( zacompatflags & ZACOMPATF_ALLOW_MORE_CLIENTSIDE_FUNCTIONS )
+			{
+				int activatorPlayer = -1;
+				if ( thing->player )
+					activatorPlayer = thing->player - players;
+				else if ( thing->target )
+					activatorPlayer = thing->target->player - players;
+
+				SERVERCOMMANDS_SoundPoint( thing->x, thing->y, thing->z, CHAN_ITEM, smallsplash ? S_GetName( splash->SmallSplashSound ) : S_GetName( splash->NormalSplashSound ), 1, ATTN_IDLE, activatorPlayer, SVCF_SKIPTHISCLIENT );
+			}
+			else
+				SERVERCOMMANDS_SoundPoint( thing->x, thing->y, thing->z, CHAN_ITEM, smallsplash ? S_GetName( splash->SmallSplashSound ) : S_GetName( splash->NormalSplashSound ), 1, ATTN_IDLE );
+		}
 	}
 
 	// Don't let deep water eat missiles
