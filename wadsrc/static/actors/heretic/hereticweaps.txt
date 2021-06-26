@@ -79,6 +79,7 @@ ACTOR StaffPuff
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	AttackSound "weapons/staffhit"
 	States
 	{
@@ -97,6 +98,7 @@ ACTOR StaffPuff2
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	AttackSound "weapons/staffpowerhit"
 	States
 	{
@@ -217,6 +219,7 @@ ACTOR GoldWandPuff1
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	RenderStyle Add
 	States
 	{
@@ -234,6 +237,7 @@ ACTOR GoldWandPuff2 : GoldWandFX1
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	States
 	{
 	Spawn:
@@ -477,6 +481,7 @@ ACTOR GauntletPuff1
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	RenderStyle Translucent
 	Alpha 0.4
 	VSpeed 0.8
@@ -834,6 +839,7 @@ ACTOR BlasterPuff
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	RenderStyle Add
 	States
 	{
@@ -1131,6 +1137,7 @@ ACTOR PhoenixPuff
 	+NOGRAVITY
 	+NOTELEPORT
 	+CANNOTPUSH
+	+PUFFGETSOWNER
 	RenderStyle Translucent
 	Alpha 0.4
 	States
