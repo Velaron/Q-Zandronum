@@ -89,7 +89,6 @@ static FRandom pr_cwbullet ("CustomWpBullet");
 static FRandom pr_cwpunch ("CustomWpPunch");
 static FRandom pr_grenade ("ThrowGrenade");
 static FRandom pr_spawndebris ("SpawnDebris");
-static FRandom pr_spawnitemex ("SpawnItemEx");
 static FRandom pr_burst ("Burst");
 static FRandom pr_monsterrefire ("MonsterRefire");
 static FRandom pr_teleport("A_Teleport");
@@ -2293,6 +2292,9 @@ enum SIX_Flags
 	SXF_CLEARCALLERSPECIAL		= 1 << 16,
 	SXF_TRANSFERSTENCILCOL		= 1 << 17,
 	SXF_TRANSFERSPRITEFRAME		= 1 << 24,    // [BIN]
+	SXF_NOUNLAGGED				= 1 << 25,    // [geNia]
+	SXF_SKIPOWNER				= 1 << 26,	  // [geNia]
+	SXF_FORCESERVERSIDE			= 1 << 27,    // [geNia]
 };
 
 // [BB] Changed return value to bool (returns false if the actor already was destroyed).
@@ -2467,11 +2469,20 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItem)
 	// [geNia] If the projectile hitbox fix is enabled and item is spawned by a missile, shift spawn z by half height
 	if ( ( self->isMissile() ) && ( zadmflags & ZADF_ENABLE_PROJECTILE_HITBOX_FIX ) )
 		zheight += self->height / 2;
+	
+	// [geNia] If the actor is spawned by a nonetid actor, then mark it as clientside
+	//  so that the client doesn't generate net id for it either
+	if ( self->lNetID == -1 )
+		((AActor*) missile->Defaults)->ulNetworkFlags |= NETFL_CLIENTSIDEONLY;
+
+	player_t* player = NULL;
+	if (self->target)
+		player = self->target->player;
 
 	AActor * mo = Spawn( missile, 
 					self->x + FixedMul(distance, finecosine[self->angle>>ANGLETOFINESHIFT]), 
 					self->y + FixedMul(distance, finesine[self->angle>>ANGLETOFINESHIFT]), 
-					self->z - self->floorclip + self->GetBobOffset() + zheight, ALLOW_REPLACE);
+					self->z - self->floorclip + self->GetBobOffset() + zheight, ALLOW_REPLACE, player);
 
 	int flags = (transfer_translation ? SXF_TRANSFERTRANSLATION : 0) + (useammo ? SXF_SETMASTER : 0);
 	bool res = InitSpawnedItem(self, mo, flags);
@@ -2523,7 +2534,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 		return;
 	}
 
-	if (chance > 0 && pr_spawnitemex()<chance) return;
+	if ( NETWORK_InClientMode( ) && ( flags & SXF_FORCESERVERSIDE ) )
+	{
+		ACTION_SET_RESULT(false);
+		return;
+	}
+
+	if (chance > 0 && self->actorRandom()<chance) return;
 
 	// Don't spawn monsters if this actor has been massacred
 	if (self->DamageType == NAME_Massacre && GetDefaultByType(missile)->flags3&MF3_ISMONSTER) return;
@@ -2565,8 +2582,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 	// [geNia] If the projectile hitbox fix is enabled and item is spawned by a missile, shift spawn z by half height
 	if ( ( self->isMissile() ) && ( zadmflags & ZADF_ENABLE_PROJECTILE_HITBOX_FIX ) )
 		zofs += self->height / 2;
+	
+	// [geNia] If the actor is spawned by a nonetid actor, then mark it as clientside
+	//  so that the client doesn't generate net id for it either
+	if ( self->lNetID == -1 )
+		((AActor*) missile->Defaults)->ulNetworkFlags |= NETFL_CLIENTSIDEONLY;
 
-	AActor *mo = Spawn(missile, x, y, self->z - self->floorclip + self->GetBobOffset() + zofs, ALLOW_REPLACE);
+	player_t* player = NULL;
+	if (self->target)
+		player = self->target->player;
+
+	AActor *mo = Spawn(missile, x, y, self->z - self->floorclip + self->GetBobOffset() + zofs, ALLOW_REPLACE, player);
 	bool res = InitSpawnedItem(self, mo, flags);
 	ACTION_SET_RESULT(res);	// for an inventory item's use state
 	if (res)
@@ -2594,10 +2620,17 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 		// [BB] If we're the server and the spawn was not blocked, tell clients to spawn the item
 		if ( res && (NETWORK_GetState( ) == NETSTATE_SERVER) )
 		{
-			SERVERCOMMANDS_SpawnThing( mo );
+			if ( player )
+			{
+				UNLAGGED_SpawnAndUnlagMissile( player->mo, mo, !!(flags & SXF_SKIPOWNER), !!(flags & SXF_NOUNLAGGED) );
+			}
+			else
+			{
+				SERVERCOMMANDS_SpawnThing( mo );
 
-			// [BB] Set the angle and velocity if necessary.
-			SERVER_SetThingNonZeroAngleAndVelocity( mo );
+				// [BB] Set the angle and velocity if necessary.
+				SERVER_SetThingNonZeroAngleAndVelocity( mo );
+			}
 
 			if ( mo->Translation )
 				SERVERCOMMANDS_SetThingTranslation( mo );
