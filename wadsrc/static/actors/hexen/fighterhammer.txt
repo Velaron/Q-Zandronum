@@ -88,6 +88,7 @@ ACTOR HammerPuff
 {
 	+NOBLOCKMAP +NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	RenderStyle "Translucent"
 	Alpha 0.6
 	VSpeed 0.8

@@ -66,6 +66,7 @@ ACTOR FlamePuff
 	Radius 1
 	Height 1
 	+NOBLOCKMAP +NOGRAVITY
+	+PUFFGETSOWNER
 	RenderStyle Add
 	SeeSound "ClericFlameExplode"
 	AttackSound "ClericFlameExplode"

@@ -149,6 +149,7 @@ ACTOR HolyMissilePuff
 	Height 8
 	+NOBLOCKMAP +NOGRAVITY +DROPOFF
 	+NOTELEPORT
+	+PUFFGETSOWNER
 	RenderStyle "Translucent"
 	Alpha 0.4
 	States
@@ -164,6 +165,7 @@ ACTOR HolyMissilePuff
 ACTOR HolyPuff
 {
 	+NOBLOCKMAP +NOGRAVITY
+	+PUFFGETSOWNER
 	RenderStyle Translucent
 	Alpha 0.6
 	States
