@@ -1301,7 +1301,7 @@ void SERVERCOMMANDS_SetThingState( AActor *pActor, NetworkActorState state, ULON
 
 //*****************************************************************************
 //
-void SERVERCOMMANDS_SetThingTarget( AActor *pActor )
+void SERVERCOMMANDS_SetThingTarget( AActor *pActor, ULONG ulPlayerExtra, ServerCommandFlags flags )
 {
 	if ( !EnsureActorHasNetID (pActor) || !EnsureActorHasNetID(pActor->target) )
 		return;
@@ -1309,19 +1309,19 @@ void SERVERCOMMANDS_SetThingTarget( AActor *pActor )
 	ServerCommands::SetThingTarget command;
 	command.SetActor( pActor );
 	command.SetTarget( pActor->target );
-	command.sendCommandToClients();
+	command.sendCommandToClients( ulPlayerExtra, flags );
 }
 
 //*****************************************************************************
 //
-void SERVERCOMMANDS_DestroyThing( AActor *pActor )
+void SERVERCOMMANDS_DestroyThing( AActor *pActor, ULONG ulPlayerExtra, ServerCommandFlags flags )
 {
 	if ( !EnsureActorHasNetID (pActor) )
 		return;
 
 	ServerCommands::DestroyThing command;
 	command.SetActor( pActor );
-	command.sendCommandToClients();
+	command.sendCommandToClients( ulPlayerExtra, flags );
 }
 
 //*****************************************************************************
