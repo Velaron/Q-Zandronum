@@ -1658,7 +1658,7 @@ void A_FireCustomMissileHelper ( AActor *self,
 {
 	// [BB] Don't tell the clients to spawn the missile yet. This is done later
 	// after we are done manipulating angle and velocity.
-	AActor *misl = P_SpawnPlayerMissile (self, x, y, z, ti, shootangle, &linetarget, NULL, (flags & FPF_NOAUTOAIM) ? true : false, true, false);
+	AActor *misl = P_SpawnPlayerMissile (self, x, y, z, ti, shootangle, &linetarget, NULL, (flags & FPF_NOAUTOAIM) ? true : false, true, false, !!(flags & FPF_NOUNLAGGED), !!(flags & FPF_SKIPOWNER) );
 
 	// automatic handling of seeker missiles
 	if (misl)
@@ -1686,7 +1686,10 @@ void A_FireCustomMissileHelper ( AActor *self,
 
 		// [BC] If we're the server, tell clients to spawn this missile.
 		if ( NETWORK_GetState( ) == NETSTATE_SERVER )
-			SERVERCOMMANDS_SpawnMissile( misl );
+		{
+			// [geNia] Compensate player ping when shooting missiles
+			UNLAGGED_SpawnAndUnlagMissile( self, misl, !!(flags & FPF_SKIPOWNER), !!(flags & FPF_NOUNLAGGED) );
+		}
 	}
 }
 

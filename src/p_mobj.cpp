@@ -7275,7 +7275,7 @@ AActor *P_SpawnMissileZ (AActor *source, fixed_t z, AActor *dest, const PClass *
 }
 
 AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
-	AActor *source, AActor *dest, const PClass *type, bool checkspawn, AActor *owner, const bool bSpawnOnClient ) // [BB] Added bSpawnOnClient.
+	AActor *source, AActor *dest, const PClass *type, bool checkspawn, AActor *owner, const bool bSpawnOnClient, const bool bNoUnlagged, bool bSkipOwner ) // [BB] Added bSpawnOnClient.
 {
 	if (dest == NULL)
 	{
@@ -7345,8 +7345,14 @@ AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
 	AActor *pMissile = (!checkspawn || P_CheckMissileSpawn (th, source->radius)) ? th : NULL;
 
 	// [BB] If we're the server, tell clients to spawn the missile.
-	if ( bSpawnOnClient && ( NETWORK_GetState( ) == NETSTATE_SERVER ) && ( pMissile ))
-		SERVERCOMMANDS_SpawnMissile( pMissile );
+	if ( ( NETWORK_GetState( ) == NETSTATE_SERVER ) && ( pMissile ))
+	{
+		if ( bSpawnOnClient )
+		{
+			// [geNia] Compensate player ping when shooting missiles
+			UNLAGGED_SpawnAndUnlagMissile( source, pMissile, bSkipOwner, bNoUnlagged );
+		}
+	}
 
 	return pMissile;
 }
@@ -7444,7 +7450,7 @@ AActor *P_SpawnMissileAngleSpeed (AActor *source, const PClass *type,
 }
 
 AActor *P_SpawnMissileAngleZSpeed (AActor *source, fixed_t z,
-	const PClass *type, angle_t angle, fixed_t velz, fixed_t speed, AActor *owner, bool checkspawn, const bool bSpawnOnClient ) // [BB] Added bSpawnOnClient.
+	const PClass *type, angle_t angle, fixed_t velz, fixed_t speed, AActor *owner, bool checkspawn, const bool bSpawnOnClient, const bool bNoUnlagged, bool bSkipOwner ) // [BB] Added bSpawnOnClient.
 {
 	AActor *mo;
 
@@ -7472,9 +7478,14 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, fixed_t z,
 	// [BB]
 	AActor *pMissile = (!checkspawn || P_CheckMissileSpawn(mo, source->radius)) ? mo : NULL;
 
-	// [BB] If we're the server, tell clients to spawn the missile.
-	if ( bSpawnOnClient && ( NETWORK_GetState( ) == NETSTATE_SERVER ) && ( pMissile ))
-		SERVERCOMMANDS_SpawnMissile( pMissile );
+	if ( ( NETWORK_GetState( ) == NETSTATE_SERVER ) && pMissile )
+	{
+		if ( bSpawnOnClient )
+		{
+			// [geNia] Compensate player ping when shooting missiles
+			UNLAGGED_SpawnAndUnlagMissile( source, pMissile, bSkipOwner, bNoUnlagged );
+		}
+	}
 
 	return pMissile;
 }
@@ -7503,7 +7514,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, const PClass *type, angle_t angle,
 // [BB] Added bSpawnOnClient.
 AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 							  const PClass *type, angle_t angle, AActor **pLineTarget, AActor **pMissileActor,
-							  bool noautoaim, bool bSpawnSound, bool bSpawnOnClient)
+							  bool noautoaim, bool bSpawnSound, bool bSpawnOnClient, bool bNoUnlagged, bool bSkipOwner)
 {
 	static const int angdiff[3] = { -1<<26, 1<<26, 0 };
 	angle_t an = angle;
@@ -7610,15 +7621,30 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	bool bValidSpawn = P_CheckMissileSpawn (MissileActor, source->radius, false);
 
 	// [BC/BB] Possibly tell clients to spawn this missile.
-	// [WS] If we know the missile is going to explode,
-	// we need to spawn the missile for the clients.
-	if ( ( bSpawnOnClient || !bValidSpawn ) && ( NETWORK_GetState( ) == NETSTATE_SERVER ) )
-		SERVERCOMMANDS_SpawnMissile( MissileActor );
+	if ( NETWORK_GetState( ) == NETSTATE_SERVER )
+	{
+		if ( bSpawnOnClient )
+		{
+			// [geNia] Compensate player ping when shooting missiles
+			UNLAGGED_SpawnAndUnlagMissile( source, MissileActor, bSkipOwner, bNoUnlagged );
+		}
+	}
 	
 	if (bValidSpawn)
 	{
 		return MissileActor;
 	}
+
+	// [WS] If we know the missile is going to explode,
+	// we need to spawn the missile for the clients.
+	if ( bSpawnOnClient ) {
+		if ( NETWORK_GetState( ) == NETSTATE_SERVER )
+			if ( NETWORK_ClientsideFunctionsAllowed( source->player ) || bSkipOwner )
+				SERVERCOMMANDS_SpawnMissile( MissileActor, source->player - players, SVCF_SKIPTHISCLIENT );
+			else
+				SERVERCOMMANDS_SpawnMissile( MissileActor );
+	}
+
 	// [WS] We are handling the explosion of the missile here instead of in P_CheckMissileSpawn.
 	P_ExplodeMissile(MissileActor, NULL, MissileActor->BlockingMobj);
 	return NULL;

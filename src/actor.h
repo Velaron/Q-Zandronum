@@ -357,6 +357,7 @@ enum
 	MF8_SEEKERMISSILENOZ= 0x00020000,	// [geNia] Same as MF2_SEEKERMISSILE, but doesn't trace along Z axis
 	MF8_MTHRUTEAMMATES	= 0x00040000,	// [geNia] Allow projectiles to pass thru teammates
 	MF8_DONTMEDAL		= 0x00080000,	// [geNia] Don't grant medals when using this weapon
+	MF8_NOUNLAGRESTOREONWOUND= 0x00100000,	// [geNia] If the actor is an AUnlaggedActor and it's health is below the WoundHealth value, then don't restore it's position in unlagged
 
 	// [Ivory] extra movement flags
 	MV_CROUCHSLIDE		= 0x00000001,
