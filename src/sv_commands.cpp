@@ -1241,8 +1241,6 @@ void SERVERCOMMANDS_MoveThing( AActor *actor, ULONG bits, ULONG ulPlayerExtra, S
 	// [BB] Only skip updates, if sent to all players.
 	if ( flags == 0 )
 		RemoveUnnecessaryPositionUpdateFlags ( actor, bits );
-	else // [WS] This will inform clients not to set their lastX/Y/Z with the new position.
-		bits |= CM_NOLAST;
 
 	// [WS] Check to see if the position can be re-used by the client.
 	CheckPositionReuse( actor, bits );

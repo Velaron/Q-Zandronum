@@ -4007,20 +4007,19 @@ void ServerCommands::MoveThing::Execute()
 	fixed_t y = ContainsNewY() ? newY : actor->y;
 	fixed_t z = ContainsNewZ() ? newZ : actor->z;
 
-	if ( ContainsNewX() && (( bits & CM_NOLAST ) == 0 ))
-		actor->lastX = x;
-	if ( ContainsNewY() && (( bits & CM_NOLAST ) == 0 ))
-		actor->lastY = y;
-	if ( ContainsNewZ() && (( bits & CM_NOLAST ) == 0 ))
-		actor->lastZ = z;
-
 	// Read in the last position data.
 	if ( ContainsLastX() )
 		actor->lastX = lastX;
+	else
+		actor->lastX = x;
 	if ( ContainsLastY() )
 		actor->lastY = lastY;
+	else
+		actor->lastY = y;
 	if ( ContainsLastZ() )
 		actor->lastZ = lastZ;
+	else
+		actor->lastZ = z;
 
 	// [WS] Clients will reuse their last updated position.
 	if ( bits & CM_REUSE_X )
@@ -4029,6 +4028,13 @@ void ServerCommands::MoveThing::Execute()
 		y = actor->lastY;
 	if ( bits & CM_REUSE_Z )
 		z = actor->lastZ;
+
+	// [geNia] Clients will override their Prev position.
+	if ( bits & CM_SETPREV ) {
+		actor->PrevX = x;
+		actor->PrevY = y;
+		actor->PrevZ = z;
+	}
 
 	// Update the thing's position.
 	if ( bits & ( CM_X|CM_Y|CM_Z|CM_REUSE_X|CM_REUSE_Y|CM_REUSE_Z ))
