@@ -4,6 +4,7 @@ Command SpawnThing
 	Fixed z
 	Class type
 	Long id
+	Byte randomSeed
 EndCommand
 
 Command SpawnThingNoNetID
@@ -20,6 +21,7 @@ Command LevelSpawnThing
 	Fixed z
 	Class type
 	Long id
+	Byte randomSeed
 EndCommand
 
 Command LevelSpawnThingNoNetID
@@ -327,6 +329,7 @@ Command SpawnPuff
 	Fixed z
 	Class pufftype
 	Long id
+	Byte randomSeed
 EndCommand
 
 Command SpawnPuffNoNetID

@@ -1656,7 +1656,7 @@ void CLIENT_AuthenticateLevel( const char *pszMapName )
 
 //*****************************************************************************
 //
-AActor *CLIENT_SpawnThing( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z, LONG lNetID, BYTE spawnFlags )
+AActor *CLIENT_SpawnThing( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z, LONG lNetID, BYTE spawnFlags, int randomSeed )
 {
 	AActor			*pActor;
 
@@ -1759,6 +1759,9 @@ AActor *CLIENT_SpawnThing( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z,
 		// Allow for client-side body removal in invasion mode.
 		if ( invasion )
 			pActor->ulInvasionWave = INVASION_GetCurrentWave( );
+
+		if ( randomSeed >= 0 )
+			pActor->SetRandomSeed( randomSeed );
 	}
 	else
 		CLIENT_PrintWarning( "CLIENT_SpawnThing: Failed to spawn actor %s with id %ld\n", pType->TypeName.GetChars( ), lNetID );
@@ -1768,7 +1771,7 @@ AActor *CLIENT_SpawnThing( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z,
 
 //*****************************************************************************
 //
-void CLIENT_SpawnMissile( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z, fixed_t VelX, fixed_t VelY, fixed_t VelZ, LONG lNetID, LONG lTargetNetID )
+void CLIENT_SpawnMissile( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z, fixed_t VelX, fixed_t VelY, fixed_t VelZ, LONG lNetID, LONG lTargetNetID, int randomSeed )
 {
 	AActor				*pActor;
 
@@ -1815,6 +1818,9 @@ void CLIENT_SpawnMissile( const PClass *pType, fixed_t X, fixed_t Y, fixed_t Z, 
 			players[consoleplayer].firstFreeNetId = 1;
 		}
 	}
+
+	if ( randomSeed >= 0 )
+		pActor->SetRandomSeed( randomSeed );
 
 	// Play the seesound if this missile has one.
 	if ( pActor->SeeSound )
@@ -2896,6 +2902,9 @@ void ServerCommands::SpawnPlayer::Execute()
 		D_UpdatePlayerColors( joinedgame ? MAXPLAYERS : ulPlayer );
 	}
 
+	if ( randomSeed >= 0 )
+		pActor->SetRandomSeed( randomSeed );
+
 	// Refresh the HUD because this is potentially a new player.
 	SCOREBOARD_RefreshHUD( );
 }
@@ -3963,28 +3972,28 @@ void ServerCommands::PlayBounceSound::Execute()
 //
 void ServerCommands::SpawnThing::Execute()
 {
-	CLIENT_SpawnThing( type, x, y, z, id, 0 );
+	CLIENT_SpawnThing( type, x, y, z, id, 0, randomSeed );
 }
 
 //*****************************************************************************
 //
 void ServerCommands::SpawnThingNoNetID::Execute()
 {
-	CLIENT_SpawnThing( type, x, y, z, -1 );
+	CLIENT_SpawnThing( type, x, y, z, -1, 0, -1 );
 }
 
 //*****************************************************************************
 //
 void ServerCommands::LevelSpawnThing::Execute()
 {
-	CLIENT_SpawnThing( type, x, y, z, id, SPAWNFLAG_LEVELTHING );
+	CLIENT_SpawnThing( type, x, y, z, id, SPAWNFLAG_LEVELTHING, randomSeed );
 }
 
 //*****************************************************************************
 //
 void ServerCommands::LevelSpawnThingNoNetID::Execute()
 {
-	CLIENT_SpawnThing( type, x, y, z, -1, SPAWNFLAG_LEVELTHING );
+	CLIENT_SpawnThing( type, x, y, z, -1, SPAWNFLAG_LEVELTHING, -1 );
 }
 
 //*****************************************************************************
@@ -4657,14 +4666,14 @@ void ServerCommands::SpawnBloodSplatter2::Execute()
 //
 void ServerCommands::SpawnPuff::Execute()
 {
-	CLIENT_SpawnThing( pufftype, x, y, z, id, SPAWNFLAG_PUFF );
+	CLIENT_SpawnThing( pufftype, x, y, z, id, SPAWNFLAG_PUFF, randomSeed );
 }
 
 //*****************************************************************************
 //
 void ServerCommands::SpawnPuffNoNetID::Execute()
 {
-	AActor *puff = CLIENT_SpawnThing( pufftype, x, y, z, -1, SPAWNFLAG_PUFF );
+	AActor *puff = CLIENT_SpawnThing( pufftype, x, y, z, -1, SPAWNFLAG_PUFF, -1 );
 
 	if ( puff == NULL )
 		return;
@@ -5235,7 +5244,7 @@ void ServerCommands::TeamFlagDropped::Execute()
 //
 void ServerCommands::SpawnMissile::Execute()
 {
-	CLIENT_SpawnMissile( missileType, x, y, z, velX, velY, velZ, netID, targetNetID );
+	CLIENT_SpawnMissile( missileType, x, y, z, velX, velY, velZ, netID, targetNetID, randomSeed );
 }
 
 //*****************************************************************************
@@ -6047,6 +6056,9 @@ void ServerCommands::GiveInventory::Execute()
 			}
 			else
 				pInventory->Amount = amount;
+
+			if ( randomSeed >= 0 )
+				pInventory->SetRandomSeed( randomSeed );
 		}
 		if ( pInventory->CallTryPickup( player->mo ) == false )
 		{

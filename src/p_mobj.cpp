@@ -116,6 +116,7 @@ EXTERN_CVAR (Int,  cl_rockettrails)
 
 // PRIVATE DATA DEFINITIONS ------------------------------------------------
 
+static FRandom pr_actorSpawn ("ActorSpawn");
 static FRandom pr_explodemissile ("ExplodeMissile");
 FRandom pr_bounce ("Bounce");
 static FRandom pr_reflect ("Reflect");
@@ -5173,6 +5174,8 @@ AActor *AActor::StaticSpawn (const PClass *type, fixed_t ix, fixed_t iy, fixed_t
 			TEAM_ExecuteReturnRoutine( teams.Size( ), NULL );
 	}
 
+	actor->SetRandomSeed(pr_actorSpawn());
+
 	g_SpawnCycles.Unclock();
 	return actor;
 }
@@ -8080,6 +8083,10 @@ void AActor::ClearCounters()
 	}
 }
 
+void AActor::SetRandomSeed(int seed) {
+	randomSeed = seed;
+	actorRandom.Init( seed );
+}
 
 //----------------------------------------------------------------------------
 //

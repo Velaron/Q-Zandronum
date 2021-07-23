@@ -250,6 +250,7 @@ void SERVERCOMMANDS_SpawnPlayer( ULONG ulPlayer, LONG lPlayerState, ULONG ulPlay
 	command.SetX( players[ulPlayer].mo->x );
 	command.SetY( players[ulPlayer].mo->y );
 	command.SetZ( players[ulPlayer].mo->z );
+	command.SetRandomSeed( players[ulPlayer].mo->randomSeed );
 	command.SetPlayerClass( players[ulPlayer].CurrentPlayerClass );
 	// command.addByte( players[ulPlayer].userinfo.GetPlayerClassNum() );
 	command.SetMorphedClass( players[ulPlayer].mo ? players[ulPlayer].mo->GetClass() : NULL );
@@ -1120,6 +1121,7 @@ void SERVERCOMMANDS_SpawnThing( AActor *pActor, ULONG ulPlayerExtra, ServerComma
 	command.SetY( pActor->y );
 	command.SetZ( pActor->z );
 	command.SetId( pActor->lNetID );
+	command.SetRandomSeed( pActor->randomSeed );
 	command.sendCommandToClients( ulPlayerExtra, flags );
 
 	if ( pActor->ulSTFlags & STFL_LEVELSPAWNED )
@@ -1166,6 +1168,7 @@ void SERVERCOMMANDS_LevelSpawnThing( AActor *pActor, ULONG ulPlayerExtra, Server
 	command.SetY( pActor->y );
 	command.SetZ( pActor->z );
 	command.SetId( pActor->lNetID );
+	command.SetRandomSeed( pActor->randomSeed );
 	command.sendCommandToClients( ulPlayerExtra, flags );
 }
 
@@ -1844,6 +1847,7 @@ void SERVERCOMMANDS_SpawnPuff( AActor *pActor, ULONG ulPlayerExtra, ServerComman
 	command.SetZ( pActor->z );
 	command.SetPufftype( pActor->GetClass( ) );
 	command.SetId( pActor->lNetID );
+	command.SetRandomSeed( pActor->randomSeed );
 	command.sendCommandToClients( ulPlayerExtra, flags );
 }
 
@@ -2288,6 +2292,7 @@ void SERVERCOMMANDS_SpawnMissile( AActor *pMissile, ULONG ulPlayerExtra, ServerC
 	command.SetVelZ( pMissile->velz );
 	command.SetMissileType( pMissile->GetClass() );
 	command.SetNetID( pMissile->lNetID );
+	command.SetRandomSeed( pMissile->randomSeed );
 
 	if ( pMissile->target )
 		command.SetTargetNetID( pMissile->target->lNetID );
@@ -3287,6 +3292,7 @@ void SERVERCOMMANDS_GiveInventory( ULONG ulPlayer, AInventory *pInventory, ULONG
 	command.SetPlayer ( &players[ulPlayer] );
 	command.SetActorNetworkIndex (  pInventory->GetClass()->getActorNetworkIndex() );
 	command.SetAmount ( pInventory->Amount );
+	command.SetRandomSeed( pInventory->randomSeed );
 	command.sendCommandToClients ( ulPlayerExtra, flags );
 
 	// [BB] Clients don't know that a BackpackItem may be depleted. In this case we have to resync the ammo count.
