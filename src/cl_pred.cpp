@@ -102,6 +102,8 @@ static	bool		g_bSavedOnMobj[CLIENT_PREDICTION_TICS];
 static	bool		g_bSavedWasJustThrustedZ[CLIENT_PREDICTION_TICS];
 static	fixed_t		g_SavedFloorZ[CLIENT_PREDICTION_TICS];
 static	int			g_SavedPredictable[CLIENT_PREDICTION_TICS][3];
+static	fixed_t		g_SelfThrustBonus[CLIENT_PREDICTION_TICS][3];
+static	bool		g_SelfThrustBonusOverride[CLIENT_PREDICTION_TICS][2];
 
 #ifdef	_DEBUG
 CVAR( Bool, cl_showpredictionsuccess, false, 0 );
@@ -307,8 +309,58 @@ static void client_predict_SaveOnGroundStatus( const player_t *pPlayer, const UL
 
 //*****************************************************************************
 //
+void CLIENT_PREDICT_SaveSelfThrustBonusHorizontal( fixed_t velx, fixed_t vely, bool bOverride )
+{
+	if ( bOverride ) {
+		g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][0] = velx;
+		g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][1] = vely;
+		g_SelfThrustBonusOverride[g_ulGameTick % CLIENT_PREDICTION_TICS][0] = true;
+	}
+	else
+	{
+		g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][0] += velx;
+		g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][1] += vely;
+	}
+}
+
+//*****************************************************************************
+//
+void CLIENT_PREDICT_SaveSelfThrustBonusVertical( fixed_t velz, bool bOverride )
+{
+	if ( bOverride ) {
+		g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][2] = velz;
+		g_SelfThrustBonusOverride[g_ulGameTick % CLIENT_PREDICTION_TICS][1] = true;
+	}
+	else
+	{
+		g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][2] += velz;
+	}
+}
+
+//*****************************************************************************
+//
+void CLIENT_PREDICT_ClearSelfThrustBonuses( )
+{
+	for (int i = 0; i < CLIENT_PREDICTION_TICS; i++)
+	{
+		g_SelfThrustBonus[i][0] = 0;
+		g_SelfThrustBonus[i][1] = 0;
+		g_SelfThrustBonus[i][2] = 0;
+		g_SelfThrustBonusOverride[i][0] = false;
+		g_SelfThrustBonusOverride[i][1] = false;
+	}
+}
+
+//*****************************************************************************
+//
 static void client_predict_BeginPrediction( player_t *pPlayer )
 {
+	g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][0] = 0;
+	g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][1] = 0;
+	g_SelfThrustBonus[g_ulGameTick % CLIENT_PREDICTION_TICS][2] = 0;
+	g_SelfThrustBonusOverride[g_ulGameTick % CLIENT_PREDICTION_TICS][0] = false;
+	g_SelfThrustBonusOverride[g_ulGameTick % CLIENT_PREDICTION_TICS][1] = false;
+
 	// Record the sectors
 	for (int i = 0; i < numsectors; ++i)
 	{
@@ -426,6 +478,26 @@ static void client_predict_DoPrediction( player_t *pPlayer, ULONG ulTicks )
 		pPlayer->mo->Predictable1 = g_SavedPredictable[lTick % CLIENT_PREDICTION_TICS][0];
 		pPlayer->mo->Predictable2 = g_SavedPredictable[lTick % CLIENT_PREDICTION_TICS][1];
 		pPlayer->mo->Predictable3 = g_SavedPredictable[lTick % CLIENT_PREDICTION_TICS][2];
+
+		if ( g_SelfThrustBonusOverride[lTick % CLIENT_PREDICTION_TICS][0] )
+		{
+			pPlayer->mo->velx = g_SelfThrustBonus[lTick % CLIENT_PREDICTION_TICS][0];
+			pPlayer->mo->vely = g_SelfThrustBonus[lTick % CLIENT_PREDICTION_TICS][1];
+		}
+		else
+		{
+			pPlayer->mo->velx += g_SelfThrustBonus[lTick % CLIENT_PREDICTION_TICS][0];
+			pPlayer->mo->vely += g_SelfThrustBonus[lTick % CLIENT_PREDICTION_TICS][1];
+		}
+
+		if ( g_SelfThrustBonusOverride[lTick % CLIENT_PREDICTION_TICS][1] )
+		{
+			pPlayer->mo->velz = g_SelfThrustBonus[lTick % CLIENT_PREDICTION_TICS][2];
+		}
+		else
+		{
+			pPlayer->mo->velz += g_SelfThrustBonus[lTick % CLIENT_PREDICTION_TICS][2];
+		}
 
 		// Tick the player.
 		P_PlayerThink( pPlayer, &g_SavedTiccmd[lTick % CLIENT_PREDICTION_TICS] );
