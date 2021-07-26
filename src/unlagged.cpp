@@ -109,6 +109,7 @@ CVAR( Bool, sv_unlagged_debugactors, false, 0 )
 bool reconciledGame = false;
 int reconciliationBlockers = 0;
 int reconciledTic = 0;
+int futureTic = 0;
 
 void UNLAGGED_Tick( void )
 {
@@ -334,6 +335,11 @@ void UNLAGGED_ReconcileTick( AActor *actor, int Tic, AUnlaggedActor* actorToSkip
 
 		unlaggedActor = unlaggedActor->nextUnlaggedActor;
 	}
+}
+
+int	UNLAGGED_GetFutureTic( )
+{
+	return futureTic;
 }
 
 // Restore everything that has been shifted
@@ -634,6 +640,7 @@ void UNLAGGED_SpawnAndUnlagMissile( AActor *source, AActor *missile, bool bSkipO
 		{
 			UNLAGGED_ReconcileTick( source, Tick, unlaggedMissile );
 			UNLAGGED_AddReconciliationBlocker();
+			futureTic = gametic + (Tick - StartingTick);
 			missile->Tick();
 
 			UNLAGGED_RecordActor( unlaggedMissile, Tick % UNLAGGEDTICS );

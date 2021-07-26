@@ -59,6 +59,7 @@ void	UNLAGGED_Tick( void );
 int		UNLAGGED_Gametic( player_t *player );
 void	UNLAGGED_Reconcile( AActor *actor );
 void	UNLAGGED_ReconcileTick( AActor *actor, int Tick, AUnlaggedActor* actorToSkip = NULL );
+int		UNLAGGED_GetFutureTic( );
 void	UNLAGGED_Restore( AActor *actor, AUnlaggedActor* actorToSkip = NULL );
 void	UNLAGGED_RecordPlayer( player_t *player, int unlaggedIndex );
 void	UNLAGGED_ResetPlayer( player_t *player );

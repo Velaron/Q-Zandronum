@@ -546,8 +546,10 @@ enum
 	RADF_NODAMAGE = 8,
 	RADF_THRUSTZ = 16
 };
-void	P_RadiusAttack (AActor *spot, AActor *source, int damage, int distance, 
-						FName damageType, int flags, int fulldamagedistance=0);
+void	P_RadiusAttack ( AActor *spot, AActor *source, int damage, int distance, 
+						FName damageType, int flags, int fulldamagedistance=0 );
+void	P_ExplosionThrust( AActor *thing, AActor *bombspot, AActor *bombsource,
+							int bombdamage, int bombdistance, FName bombmod, int flags, int fulldamagedistance );
 
 void	P_DelSector_List();
 void	P_DelSeclist(msecnode_t *);							// phares 3/16/98

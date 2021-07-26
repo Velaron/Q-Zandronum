@@ -717,6 +717,58 @@ void player_t::SendPitchLimits() const
 
 //===========================================================================
 //
+// player_t :: AddFutureThrust
+//
+// Adds a struct with explosion details to thrust the unlagged player
+// with an proper delay
+//
+//===========================================================================
+
+void player_t::AddFutureThrust( sFUTURETHRUST* NewFutureThrust )
+{
+	if ( NewFutureThrust == NULL )
+		return;
+
+	if ( FutureThrust != NULL )
+	{
+		sFUTURETHRUST *tempFutureThrust = FutureThrust;
+
+		if ( FutureThrust->tic > NewFutureThrust->tic )
+		{
+			FutureThrust = NewFutureThrust;
+			FutureThrust->next = tempFutureThrust;
+		}
+		else
+		{
+			while ( tempFutureThrust )
+			{
+				if (tempFutureThrust->next == NULL)
+				{
+					tempFutureThrust->next = NewFutureThrust;
+					tempFutureThrust = NULL;
+				}
+				else if (tempFutureThrust->next->tic > NewFutureThrust->tic)
+				{
+					NewFutureThrust->next = tempFutureThrust->next;
+					tempFutureThrust->next = NewFutureThrust;
+					tempFutureThrust = NULL;
+				}
+				else
+				{
+					tempFutureThrust = tempFutureThrust->next;
+				}
+			}
+
+		}
+	}
+	else
+	{
+		FutureThrust = NewFutureThrust;
+	}
+}
+
+//===========================================================================
+//
 // APlayerPawn
 //
 //===========================================================================
@@ -5102,6 +5154,18 @@ void P_PlayerThink (player_t *player, ticcmd_t *pCmd)
 				}
 			}
 		}
+	}
+
+	// Apply future thrust structs whose time has come
+	sFUTURETHRUST *tempFutureThrust;
+	while ( player->FutureThrust != NULL && player->FutureThrust->tic <= gametic )
+	{
+		P_ExplosionThrust( player->FutureThrust->thing, player->FutureThrust->bombspot, player->FutureThrust->bombsource,
+			player->FutureThrust->bombdamage, player->FutureThrust->bombdistance, player->FutureThrust->bombmod,
+			player->FutureThrust->flags, player->FutureThrust->fulldamagedistance );
+		tempFutureThrust = player->FutureThrust;
+		player->FutureThrust = player->FutureThrust->next;
+		free(tempFutureThrust);
 	}
 }
 
