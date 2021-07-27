@@ -81,7 +81,6 @@
 #include "unlagged.h"
 #include "d_netinf.h"
 
-static FRandom pr_camissile ("CustomActorfire");
 static FRandom pr_camelee ("CustomMelee");
 static FRandom pr_cabullet ("CustomBullet");
 static FRandom pr_cwbullet ("CustomWpBullet");
