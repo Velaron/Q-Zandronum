@@ -1152,7 +1152,8 @@ bool APlayerPawn::UseInventory (AInventory *item)
 	if( NETWORK_GetState( ) == NETSTATE_SERVER )
 	{
 		// [BB] Use the player number we stored above.
-		SERVERCOMMANDS_PlayerUseInventory( ulPlayer, item );
+		if ( !( zacompatflags & ZACOMPATF_ALLOW_MORE_CLIENTSIDE_FUNCTIONS ) )
+			SERVERCOMMANDS_PlayerUseInventory( ulPlayer, item );
 	}
 	else if (player == &players[consoleplayer])
 	{
