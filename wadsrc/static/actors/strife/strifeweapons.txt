@@ -11,6 +11,7 @@ ACTOR StrifePuff
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+ALLOWPARTICLES
+	+PUFFGETSOWNER
 	RenderStyle Translucent
 	Alpha 0.25
 
@@ -570,6 +571,7 @@ ACTOR MaulerPuff
 	+NOBLOCKMAP
 	+NOGRAVITY
 	+PUFFONACTORS
+	+PUFFGETSOWNER
 	RenderStyle Add
 	DamageType Disintegrate
 	states
