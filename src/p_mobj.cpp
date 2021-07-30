@@ -1538,8 +1538,9 @@ void P_ExplodeMissile (AActor *mo, line_t *line, AActor *target)
 	if ( NETWORK_GetState( ) == NETSTATE_SERVER )
 	{
 		// No need to do this if the line struck a horizon line.
-		if (( line == NULL ) ||
+		if ((( line == NULL ) ||
 			( line->special != Line_Horizon ))
+			 && !UNLAGGED_IsReconciled( ))
 		{
 			SERVERCOMMANDS_MissileExplode( mo, line );
 			// [BB] Since SERVERCOMMANDS_MissileExplode doesn't tell the clients the target, the clients
