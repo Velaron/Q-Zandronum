@@ -158,7 +158,7 @@ AActor *P_SpawnPlayerMissile (AActor* source, const PClass *type);
 AActor *P_SpawnPlayerMissile (AActor *source, const PClass *type, angle_t angle, bool bSpawnSound = true );
 AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z, const PClass *type, angle_t angle, 
 							  AActor **pLineTarget = NULL, AActor **MissileActor = NULL, bool noautoaim = false,
-							  bool bSpawnSound = true, bool bSpawnOnClient = true, bool bNoUnlagged = false, bool bSkipOwner = false );
+							  bool bSpawnSound = true, bool bSpawnOnClient = true, bool bNoUnlagged = false, bool bSkipOwner = false, bool bNoSetRandomSeed = false );
 
 // [BB]
 inline void P_SpawnPlayerMissileWithPossibleSpread (AActor* source, const PClass *type)

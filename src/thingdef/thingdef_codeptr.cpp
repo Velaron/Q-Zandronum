@@ -1677,7 +1677,8 @@ void A_FireCustomMissileHelper ( AActor *self,
 {
 	// [BB] Don't tell the clients to spawn the missile yet. This is done later
 	// after we are done manipulating angle and velocity.
-	AActor *misl = P_SpawnPlayerMissile (self, x, y, z, ti, shootangle, &linetarget, NULL, (flags & FPF_NOAUTOAIM) ? true : false, true, false, !!(flags & FPF_NOUNLAGGED), !!(flags & FPF_SKIPOWNER) );
+	AActor *misl = P_SpawnPlayerMissile (self, x, y, z, ti, shootangle, &linetarget, NULL, (flags & FPF_NOAUTOAIM) ? true : false, true, false,
+		!!(flags & FPF_NOUNLAGGED), !!(flags & FPF_SKIPOWNER), !!(flags & FPF_FORCESERVERSIDE) );
 
 	// automatic handling of seeker missiles
 	if (misl)
@@ -2652,6 +2653,9 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_SpawnItemEx)
 			mo->velz = zvel;
 		}
 		mo->angle = Angle;
+
+		if ( !( flags & SXF_FORCESERVERSIDE ) )
+			mo->SetRandomSeed( self->actorRandom() );
 
 		// [BB] If we're the server and the spawn was not blocked, tell clients to spawn the item
 		if ( res && (NETWORK_GetState( ) == NETSTATE_SERVER) )

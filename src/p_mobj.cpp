@@ -7354,6 +7354,8 @@ AActor *P_SpawnMissileXYZ (fixed_t x, fixed_t y, fixed_t z,
 
 	AActor *th = Spawn (type, x, y, z, ALLOW_REPLACE);
 	
+	th->SetRandomSeed( source->actorRandom() );
+
 	P_PlaySpawnSound(th, source);
 
 	// record missile's originator
@@ -7527,6 +7529,8 @@ AActor *P_SpawnMissileAngleZSpeed (AActor *source, fixed_t z,
 	}
 
 	mo = Spawn (type, source->x, source->y, z, ALLOW_REPLACE);
+	
+	mo->SetRandomSeed( source->actorRandom() );
 
 	P_PlaySpawnSound(mo, source);
 	if (owner == NULL) owner = source;
@@ -7585,7 +7589,7 @@ AActor *P_SpawnPlayerMissile (AActor *source, const PClass *type, angle_t angle,
 // [BB] Added bSpawnOnClient.
 AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 							  const PClass *type, angle_t angle, AActor **pLineTarget, AActor **pMissileActor,
-							  bool noautoaim, bool bSpawnSound, bool bSpawnOnClient, bool bNoUnlagged, bool bSkipOwner)
+							  bool noautoaim, bool bSpawnSound, bool bSpawnOnClient, bool bNoUnlagged, bool bSkipOwner, bool bNoSetRandomSeed)
 {
 	static const int angdiff[3] = { -1<<26, 1<<26, 0 };
 	angle_t an = angle;
@@ -7668,6 +7672,9 @@ AActor *P_SpawnPlayerMissile (AActor *source, fixed_t x, fixed_t y, fixed_t z,
 	}
 	MissileActor->target = source;
 	MissileActor->angle = an;
+
+	if ( !bNoSetRandomSeed )
+		MissileActor->SetRandomSeed( source->actorRandom() );
 
 	fixed_t vx, vy, vz, speed;
 
