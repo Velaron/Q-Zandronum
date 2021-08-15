@@ -4060,7 +4060,10 @@ showme:
 
 					// [BB] Inform the clients about the blend.
 					if ( NETWORK_GetState( ) == NETSTATE_SERVER )
-						SERVERCOMMANDS_SetPlayerBlend ( ULONG ( viewer - players ) );
+						if ( NETWORK_ClientsideFunctionsAllowed( activator ) )
+							SERVERCOMMANDS_SetPlayerBlend ( ULONG ( viewer - players ), ULONG ( viewer - players ), SVCF_SKIPTHISCLIENT );
+						else
+							SERVERCOMMANDS_SetPlayerBlend ( ULONG ( viewer - players ) );
 				}
 				else
 				{
