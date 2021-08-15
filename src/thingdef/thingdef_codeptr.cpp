@@ -1716,6 +1716,13 @@ DEFINE_ACTION_FUNCTION_PARAMS(AActor, A_FireCustomMissile)
 	// out of ammo
 	if (UseAmmo && weapon && !weapon->DepleteAmmo(weapon->bAltFire, true))
 		return;
+	
+	// [geNia] Don't spawn serverside actors on clients
+	if ( NETWORK_InClientMode( ) && ( Flags & FPF_FORCESERVERSIDE ) )
+	{
+		ACTION_SET_RESULT(false);
+		return;
+	}
 
 	// [BB] Should the actor not be spawned, taking in account client side only actors?
 	if ( NETWORK_ShouldActorNotBeSpawned ( self, ti ) )

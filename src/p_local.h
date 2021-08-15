@@ -194,6 +194,7 @@ enum
 	FPF_NOAUTOAIM = 4,
 	FPF_NOUNLAGGED = 8,
 	FPF_SKIPOWNER = 16,
+	FPF_FORCESERVERSIDE = 32,
 };
 
 void P_CheckFakeFloorTriggers (AActor *mo, fixed_t oldz, bool oldz_has_viewheight=false);
